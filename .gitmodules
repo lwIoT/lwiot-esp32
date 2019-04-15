@@ -9,7 +9,7 @@
 	url = https://github.com/lwIoT/lwiot-core.git
 [submodule "external/esp32-idf"]
 	path = external/esp32-idf
-	url = https://github.com/espressif/esp-idf.git
+	url = https://github.com/lwIoT/esp32-idf.git
 [submodule "mbedtls"]
 	path = mbedtls
 	url = https://github.com/lwIoT/lwiot-mbedtls.git
