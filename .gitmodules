@@ -1,9 +1,9 @@
 [submodule "freertos"]
 	path = freertos
-	url = git@github.com:lwIoT/lwiot-freertos.git
+	url = https://github.com/lwIoT/lwiot-freertos.git
 [submodule "lwip"]
 	path = lwip
-	url = git@github.com:lwIoT/lwiot-lwip.git
+	url = https://github.com/lwIoT/lwiot-lwip.git
 [submodule "lwiot-core"]
 	path = lwiot-core
 	url = https://github.com/lwIoT/lwiot-core.git
