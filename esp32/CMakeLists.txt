@@ -2,7 +2,7 @@
 # ESP32 platform build file.
 #
 
-include(${PROJECT_SOURCE_DIR}/source/platform/ports/freertos/freertos.cmake)
+include(${PROJECT_SOURCE_DIR}/freertos/freertos.cmake)
 
 SET(PORT_SOURCE_FILES
 	esp32adcchip.cpp
@@ -25,11 +25,19 @@ SET(PORT_SOURCE_FILES
 	soc/esp32.c
 	soc/esp32system.cpp
 	${FREERTOS_SOURCE_FILES}
-	${PROJECT_SOURCE_DIR}/source/platform/lwip/lwip.c
-	${PROJECT_SOURCE_DIR}/source/platform/ssl/mbedtls.c
+	${PROJECT_SOURCE_DIR}/lwip/lwip.c
+	${PROJECT_SOURCE_DIR}/mbedtls/mbedtls.c
 )
 
 add_library(lwiot-platform ${PORT_SOURCE_FILES})
 
-target_include_directories(lwiot-platform PUBLIC ${PROJECT_SOURCE_DIR}/source/platform/esp32/include)
-target_include_directories(lwiot-platform PUBLIC ${PORT_INCLUDE_DIR})
+INSTALL(TARGETS lwiot-platform
+	LIBRARY DESTINATION lib
+	ARCHIVE DESTINATION lib
+)
+
+INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/esp32/include/ DESTINATION include)
+
+#target_include_directories(lwiot-platform PUBLIC ${PORT_INCLUDE_DIR})
+include_directories(lwiot-platform PUBLIC ${PROJECT_SOURCE_DIR}/lwiot-core/include ${CMAKE_BINARY_DIR} ${PORT_INCLUDE_DIR})
+

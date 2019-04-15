@@ -1,0 +1,54 @@
+cmake_minimum_required(VERSION 3.0)
+project(lwiot-esp32)
+
+include(CMakeToolsHelpers OPTIONAL)
+include(CheckIncludeFiles)
+include(CheckTypeSize)
+include(CheckCSourceCompiles)
+include(TestBigEndian)
+
+#add_subdirectory(lwiot-core)
+
+if (CMAKE_BUILD_TYPE MATCHES Debug)
+    set(HAVE_DEBUG True)
+endif ()
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_C_STANDARD 11)
+
+CHECK_INCLUDE_FILES (stdlib.h HAVE_STDLIB_H)
+CHECK_INCLUDE_FILES (stdio.h  HAVE_STDIO_H)
+CHECK_INCLUDE_FILES (stdint.h HAVE_STDINT_H)
+CHECK_INCLUDE_FILES (stdarg.h HAVE_STDARG_H)
+CHECK_INCLUDE_FILES (assert.h HAVE_ASSERT_H)
+CHECK_INCLUDE_FILES (string.h HAVE_STRING_H)
+CHECK_INCLUDE_FILES (time.h HAVE_TIME_H)
+CHECK_INCLUDE_FILES (Winsock2.h HAVE_WINSOCK_H)
+CHECK_INCLUDE_FILES (arpa/inet.h HAVE_INET_H)
+
+CHECK_C_SOURCE_COMPILES (
+        "
+    #include <stdlib.h>
+    #include <stdint.h>
+    int main(int argc, char* argv[])
+    {
+        ssize_t size;
+        (void)size;
+        return 0;
+    }
+  " HAVE_SSIZE_T)
+
+CHECK_C_SOURCE_COMPILES (
+        "
+    #include <stdlib.h>
+    #include <stdint.h>
+    int main(int argc, char* argv[])
+    {
+        size_t size;
+        (void)size;
+        return 0;
+    }
+  " HAVE_SIZE_T)
+
+add_subdirectory(lwiot-core)
+add_subdirectory(esp32)

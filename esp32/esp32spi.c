@@ -6,6 +6,7 @@
  */
 
 #include <lwiot.h>
+#include <string.h>
 #include <esp_attr.h>
 #include <esp_intr.h>
 
