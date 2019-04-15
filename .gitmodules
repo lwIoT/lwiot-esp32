@@ -1,0 +1,6 @@
+[submodule "freertos"]
+	path = freertos
+	url = git@github.com:lwIoT/lwiot-freertos.git
+[submodule "lwip"]
+	path = lwip
+	url = git@github.com:lwIoT/lwiot-lwip.git
