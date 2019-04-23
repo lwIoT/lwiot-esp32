@@ -12,6 +12,7 @@
 #include <lwiot.h>
 #include <esp_err.h>
 #include <esp_wifi.h>
+#include <tcpip_adapter.h>
 
 #include <lwiot/log.h>
 #include <lwiot/types.h>
@@ -23,8 +24,8 @@
 #include <lwip/ip_addr.h>
 #include <lwip/dns.h>
 
-#include <apps/dhcpserver.h>
-#include <apps/dhcpserver_options.h>
+#include <apps/dhcpserver/dhcpserver.h>
+#include <apps/dhcpserver/dhcpserver_options.h>
 
 extern "C" {
 	extern void esp32_wifi_subsys_init(void);
