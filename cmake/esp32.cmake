@@ -67,16 +67,17 @@ set(CMAKE_OBJCOPY ${ESP32_TOOLCHAIN_PATH}/bin/xtensa-esp32-elf-objcopy CACHE PAT
 SET(PORT_INCLUDE_DIR
 	${PROJECT_SOURCE_DIR}/esp32/include
 
-	#${ESP32_IDF_PATH}/components/lwip/lwip/src/include
-	#${ESP32_IDF_PATH}/components/lwip/port/esp32/include
-	#${ESP32_IDF_PATH}/components/lwip/include
-	#${ESP32_IDF_PATH}/components/lwip/include_compat
-	#${ESP32_IDF_PATH}/components/lwip/lwip/src/include/posix
+	${ESP32_IDF_PATH}/components/lwip/lwip/src/include
+	${ESP32_IDF_PATH}/components/lwip/port/esp32/include
+	${ESP32_IDF_PATH}/components/lwip/include
+	${ESP32_IDF_PATH}/components/lwip/include/apps
+	${ESP32_IDF_PATH}/components/lwip/include_compat
+	${ESP32_IDF_PATH}/components/lwip/lwip/src/include/posix
 
-	${ESP32_IDF_PATH}/components/lwip/include/lwip
-	${ESP32_IDF_PATH}/components/lwip/include/lwip/port
-	${ESP32_IDF_PATH}/components/lwip/include/lwip/posix
-	${ESP32_IDF_PATH}/components/lwip/apps/ping
+	#${ESP32_IDF_PATH}/components/lwip/include/lwip
+	#${ESP32_IDF_PATH}/components/lwip/include/lwip/port
+	#${ESP32_IDF_PATH}/components/lwip/include/lwip/posix
+	#${ESP32_IDF_PATH}/components/lwip/apps/ping
 
 	${ESP32_IDF_PATH}/components/cxx/include
 	${ESP32_IDF_PATH}/components/driver/include
@@ -114,6 +115,7 @@ SET(ESP32 True CACHE BOOL "Build for the ESP32 SoC.")
 SET(HAVE_RTOS True)
 SET(HAVE_JSON True)
 SET(HAVE_LWIP True)
+SET(HAVE_IP6 True)
 SET(HAVE_SYNC_FETCH True)
 SET(HAVE_NETWORKING True)
 SET(RTTI False CACHE BOOL "Enable/disable runtime type identification.")
