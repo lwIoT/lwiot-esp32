@@ -1,13 +1,11 @@
 cmake_minimum_required(VERSION 3.0)
-project(lwiot-esp32)
+project(lwiot-esp32 C CXX ASM)
 
 include(CMakeToolsHelpers OPTIONAL)
 include(CheckIncludeFiles)
 include(CheckTypeSize)
 include(CheckCSourceCompiles)
 include(TestBigEndian)
-
-#add_subdirectory(lwiot-core)
 
 if (CMAKE_BUILD_TYPE MATCHES Debug)
     set(HAVE_DEBUG True)
@@ -57,6 +55,8 @@ CHECK_C_SOURCE_COMPILES (
         return 0;
     }
   " HAVE_SIZE_T)
+
+include(${PROJECT_SOURCE_DIR}/cmake/freertos-type-check.cmake)
 
 add_subdirectory(lwiot-core)
 add_subdirectory(esp32)

@@ -2,8 +2,6 @@
 # ESP32 platform build file.
 #
 
-include(${PROJECT_SOURCE_DIR}/freertos/freertos.cmake)
-
 SET(PORT_SOURCE_FILES
 	esp32adcchip.cpp
 	esp32dacchip.cpp
