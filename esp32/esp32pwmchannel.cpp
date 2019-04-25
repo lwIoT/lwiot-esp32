@@ -28,10 +28,7 @@ static mcpwm_io_signals_t pwm_channel_map[] = {
 	MCPWM2A, MCPWM2B
 };
 
-static mcpwm_config_t pwm_config[] = {
-	{0}, {0}, {0}, /* First unit */
-	{0}, {0}, {0} /* Second unit */
-};
+static mcpwm_config_t pwm_config[6];
 
 namespace lwiot { namespace esp32
 {
