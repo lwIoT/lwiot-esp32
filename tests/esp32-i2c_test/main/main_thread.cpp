@@ -19,9 +19,9 @@
 #include <lwiot/io/gpiopin.h>
 #include <lwiot/io/watchdog.h>
 #include <lwiot/io/i2cbus.h>
+#include <lwiot/io/hardwarei2calgorithm.h>
 #include <lwiot/io/gpioi2calgorithm.h>
 #include <lwiot/io/i2cmessage.h>
-#include <lwiot/device/apds9301sensor.h>
 
 #include <lwiot/util/datetime.h>
 #include <lwiot/util/application.h>
@@ -47,19 +47,16 @@ static int calculate_udelay_test(const uint32_t& frequency)
 }
 
 class I2CTestApplication : public lwiot::Functor {
-private:
-	lwiot::Apds9301Sensor *_sensor;
-
 protected:
 	void run() override
 	{
 		size_t freesize;
-		//auto algo = new lwiot::GpioI2CAlgorithm(23, 22, 100000U);
-		lwiot::I2CBus bus(new lwiot::esp32::I2CAlgorithm(23, 22, 400000U));
-		this->_sensor = new lwiot::Apds9301Sensor(bus);
+		lwiot::GpioPin scl(22);
+		lwiot::GpioPin sda(23);
+		auto algo = new lwiot::HardwareI2CAlgorithm(scl, sda, 400000U);
+		lwiot::I2CBus bus(algo);
 
 		printf("Main thread started!\n");
-		//algo->test();
 		lwiot_sleep(1000);
 
 		lwiot::DateTime dt;
@@ -86,8 +83,6 @@ protected:
 
 
 		while(true) {
-			//this->_sensor->getLux(luxdata);
-
 			lwiot::stl::Vector<lwiot::I2CMessage*> msgs;
 			lwiot::I2CMessage wr(1);
 			lwiot::I2CMessage rd(32);
@@ -142,26 +137,13 @@ protected:
 private:
 	void testSingle(lwiot::I2CBus& bus)
 	{
-		lwiot::I2CMessage wr(1), rd(3);
-		lwiot::stl::Vector<lwiot::I2CMessage*> msgs(2);
+		lwiot::I2CMessage wr(1);
 
 		wr.setAddress(0x6B, false, false);
 		wr.write(1);
-		wr.setRepeatedStart(true);
+		wr.setRepeatedStart(false);
 
-		rd.setAddress(0x6B, false, true);
-		rd.setRepeatedStart(false);
-
-		msgs.pushback(&wr);
-		msgs.pushback(&rd);
-
-		if(bus.transfer(msgs)) {
-			auto b1 = rd[0];
-			auto b2 = rd[1];
-			auto b3 = rd[2];
-
-			assert(b2 == (b1 + 1));
-			assert(b3 == b2 + 1);
+		if(bus.transfer(wr)) {
 			print_dbg("Single test successfull!\n");
 		} else {
 			print_dbg("Single test failed!\n");
