@@ -21,6 +21,7 @@
 #include <lwiot/io/gpioi2calgorithm.h>
 #include <lwiot/io/i2cbus.h>
 #include <lwiot/io/i2cmessage.h>
+#include <lwiot/io/hardwarei2calgorithm.h>
 #include <lwiot/device/apds9301sensor.h>
 #include <lwiot/device/dsrealtimeclock.h>
 
@@ -124,7 +125,7 @@ protected:
 	{
 		lwiot::esp32::PwmTimer timer(0, MCPWM_UNIT_0, 100);
 		lwiot::DateTime dt(1539189832);
-		lwiot::I2CBus bus(new lwiot::esp32::I2CAlgorithm(23,22,400000U));
+		lwiot::I2CBus bus(new lwiot::HardwareI2CAlgorithm(22, 23, 400000));
 
 		lwiot_sleep(1000);
 		this->startPwm(timer);
