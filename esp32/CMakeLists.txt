@@ -22,7 +22,9 @@ SET(PORT_SOURCE_FILES
 
 	soc/esp32.c
 	soc/esp32system.cpp
-	${FREERTOS_SOURCE_FILES}
+	soc/i2chal.c
+
+	${PROJECT_SOURCE_DIR}/freertos/rtos.c
 	${PROJECT_SOURCE_DIR}/lwip/lwip.c
 	${PROJECT_SOURCE_DIR}/mbedtls/mbedtls.c
 )
@@ -37,6 +39,4 @@ INSTALL(TARGETS lwiot-platform
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/esp32/include/ DESTINATION include)
 INSTALL(DIRECTORY ${PROJECT_SOURCE_DIR}/esp32/config/${CMAKE_BUILD_TYPE}/ DESTINATION config)
 
-#target_include_directories(lwiot-platform PUBLIC ${PORT_INCLUDE_DIR})
 include_directories(lwiot-platform PUBLIC ${PROJECT_SOURCE_DIR}/lwiot-core/include ${CMAKE_BINARY_DIR} ${PORT_INCLUDE_DIR})
-
