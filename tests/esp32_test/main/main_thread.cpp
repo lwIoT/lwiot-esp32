@@ -10,6 +10,7 @@
 #include <esp_attr.h>
 #include <esp_heap_caps.h>
 #include <lwiot.h>
+#include <esp_core_dump.h>
 
 #include <lwiot/kernel/thread.h>
 #include <lwiot/log.h>
@@ -31,7 +32,7 @@
 #include <lwiot/network/udpclient.h>
 #include <lwiot/network/sockettcpserver.h>
 #include <lwiot/network/wifiaccesspoint.h>
-#include <lwiot/network/captiveportal.h>
+#include <lwiot/network/dnsserver.h>
 
 #include <lwiot/stl/move.h>
 
@@ -49,7 +50,7 @@ public:
 protected:
 	void run() override
 	{
-		auto srv = new lwiot::SocketTcpServer(lwiot::IPAddress(192,168,1,1), 8080);
+		auto srv = new lwiot::SocketTcpServer(lwiot::IPAddress(192,168,1,1), 80);
 		lwiot::HttpServer server(srv);
 
 		this->setup_server(server);
@@ -126,6 +127,7 @@ protected:
 		lwiot::esp32::PwmTimer timer(0, MCPWM_UNIT_0, 100);
 		lwiot::DateTime dt(1539189832);
 		lwiot::I2CBus bus(new lwiot::HardwareI2CAlgorithm(22, 23, 400000));
+		lwiot::IPAddress local(192, 168, 1, 1);
 
 		lwiot_sleep(1000);
 		this->startPwm(timer);
@@ -135,9 +137,15 @@ protected:
 
 		this->startAP("lwIoT test", "testap1234");
 
-		lwiot::SocketUdpServer* udp = new lwiot::SocketUdpServer();
-		lwiot::CaptivePortal portal(lwiot::IPAddress(192,168,1,1), lwiot::IPAddress(192,168,1,1));
-		portal.begin(udp, 53);
+		lwiot::SocketUdpServer* udp = new lwiot::SocketUdpServer(BIND_ADDR_ANY, 53);
+		lwiot::DnsServer dns;
+
+		dns.map("smartsensor.local", local);
+		dns.map("www.smartsensor.local", local);
+
+		udp->bind();
+		dns.begin(udp);
+
 		wdt.enable(2000);
 
 		lwiot::Apds9301Sensor sensor(bus);
