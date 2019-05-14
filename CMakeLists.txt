@@ -58,5 +58,8 @@ CHECK_C_SOURCE_COMPILES (
 
 include(${PROJECT_SOURCE_DIR}/cmake/freertos-type-check.cmake)
 
+INSTALL(PROGRAMS cmake/spiffs_tools.mk DESTINATION scripts)
+
 add_subdirectory(lwiot-core)
 add_subdirectory(esp32)
+
