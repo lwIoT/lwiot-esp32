@@ -12,11 +12,14 @@ BUILD_DIR = $(PWD)/../../build/debug
 EXTRA_CFLAGS = -I$(BUILD_DIR) -I$(PWD)/../../lwiot-core/include -I$(PORT_PATH)
 EXTRA_CXXFLAGS = $(EXTRA_CFLAGS) -std=gnu++14
 
+SPIFFSGEN_PY := ../../lwiot-core/scripts/spiffsgen.py
 IDF_PATH := $(ESP32_IDF_PATH)
+
 export IDF_PATH
+export SPIFFSGEN_PY
 
 include $(IDF_PATH)/make/project.mk
-include $(PWD)/spiffs_tools.mk
+include $(PWD)/../../cmake/spiffs_tools.mk
 
 # Create a SPIFFS image from the contents of the 'spiffs_image' directory
 # that fits the partition named 'storage'. FLASH_IN_PROJECT indicates that
