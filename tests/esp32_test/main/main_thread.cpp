@@ -38,6 +38,7 @@
 
 #include <lwiot/esp32/esp32pwm.h>
 #include <lwiot/esp32/esp32i2calgorithm.h>
+#include <lwiot/esp32/esp32ap.h>
 
 static double luxdata = 0x0;
 
@@ -112,14 +113,14 @@ protected:
 
 	void startAP(const lwiot::String& ssid, const lwiot::String& passw)
 	{
-		auto& ap = lwiot::WifiAccessPoint::instance();
+		auto& ap = lwiot::esp32::WifiAccessPoint::instance();
 		lwiot::IPAddress local(192, 168, 1, 1);
 		lwiot::IPAddress subnet(255, 255, 255, 0);
 		lwiot::IPAddress gw(192, 168, 1, 1);
 
 		ap.start();
 		ap.config(local, gw, subnet);
-		ap.begin(ssid, passw, 4);
+		ap.begin(ssid, passw, 4, false, 4);
 	}
 
 	virtual void run() override
