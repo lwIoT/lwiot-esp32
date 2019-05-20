@@ -17,7 +17,7 @@ SET(PORT_SOURCE_FILES
 	esp32uart.cpp
 	esp32watchdog.cpp
 	esp32_ap.cpp
-	esp32_station.cpp
+	esp32_sta.cpp
 	esp32_wifi.c
 
 	soc/esp32.c

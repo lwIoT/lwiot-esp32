@@ -93,6 +93,8 @@ void esp32_wifi_subsys_init(void)
 
 void esp32_wifi_init_softap(const char *ssid, const char *pass, int max, uint8_t hidden, int channel)
 {
+	wifi_mode_t mode;
+
 	wifi_config_t config = {
 		.ap = {
 			.ssid_len = strlen(ssid),
@@ -109,14 +111,22 @@ void esp32_wifi_init_softap(const char *ssid, const char *pass, int max, uint8_t
 	strcpy(config.ap.ssid, ssid);
 	strcpy(config.ap.password, pass);
 
+	esp_wifi_get_mode(&mode);
 	esp_wifi_stop();
-	esp_wifi_set_mode(WIFI_MODE_AP);
+
+	if(mode == WIFI_MODE_APSTA || mode == WIFI_MODE_STA)
+		esp_wifi_set_mode(WIFI_MODE_APSTA);
+	else
+		esp_wifi_set_mode(WIFI_MODE_AP);
+
 	esp_wifi_set_config(ESP_IF_WIFI_AP, &config);
 	esp_wifi_start();
 }
 
 void esp32_wifi_init_station(const char *ssid, const char *pass)
 {
+	wifi_mode_t mode;
+
 	wifi_config_t config = {
 		.sta = {
 			.channel = 1
@@ -127,6 +137,13 @@ void esp32_wifi_init_station(const char *ssid, const char *pass)
 	strcpy(config.sta.password, pass);
 
 	esp_wifi_stop();
+	esp_wifi_get_mode(&mode);
+
+	if(mode == WIFI_MODE_APSTA || mode == WIFI_MODE_AP)
+		esp_wifi_set_mode(WIFI_MODE_APSTA);
+	else
+		esp_wifi_set_mode(WIFI_MODE_STA);
+
 	esp_wifi_set_mode(WIFI_MODE_STA);
 	esp_wifi_set_config(ESP_IF_WIFI_STA, &config);
 	esp_wifi_start();
