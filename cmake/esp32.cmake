@@ -104,6 +104,8 @@ SET(PORT_INCLUDE_DIR
 	${ESP32_IDF_PATH}/components/soc/include
 	${ESP32_IDF_PATH}/components/freertos/include/freertos
 	${ESP32_IDF_PATH}/components/newlib/platform_include
+	${ESP32_IDF_PATH}/components/spiffs/include
+
 
 	${APP_CONFIG}
 )
