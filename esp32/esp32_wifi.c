@@ -112,7 +112,6 @@ void esp32_wifi_init_softap(const char *ssid, const char *pass, int max, uint8_t
 	strcpy(config.ap.password, pass);
 
 	esp_wifi_get_mode(&mode);
-	esp_wifi_stop();
 
 	if(mode == WIFI_MODE_APSTA || mode == WIFI_MODE_STA)
 		esp_wifi_set_mode(WIFI_MODE_APSTA);
@@ -136,7 +135,6 @@ void esp32_wifi_init_station(const char *ssid, const char *pass)
 	strcpy(config.sta.ssid, ssid);
 	strcpy(config.sta.password, pass);
 
-	esp_wifi_stop();
 	esp_wifi_get_mode(&mode);
 
 	if(mode == WIFI_MODE_APSTA || mode == WIFI_MODE_AP)
