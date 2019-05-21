@@ -11,14 +11,12 @@ SET(PORT_SOURCE_FILES
 	esp32pwmchannel.cpp
 	esp32pwmtimer.cpp
 	esp32secondaryadc.cpp
-	esp32spi.c
-	esp32spi.h
-	esp32spibus.cpp
 	esp32uart.cpp
 	esp32watchdog.cpp
 	esp32_ap.cpp
 	esp32_sta.cpp
 	esp32_wifi.c
+	spibus.cpp
 	spiffs.cpp
 
 	soc/esp32.c
