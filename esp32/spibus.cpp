@@ -27,7 +27,7 @@ namespace lwiot
 {
 	namespace esp32
 	{
-		SpiBus::SpiBus(uint8_t num, uint8_t clk, uint8_t miso, uint8_t mosi) :
+		SpiBus::SpiBus(uint8_t clk, uint8_t miso, uint8_t mosi, uint8_t num) :
 				lwiot::SpiBus(mosi, miso, clk, 1000000UL), _frequency(1000000UL), _num(num)
 		{
 			this->_div = spiFrequencyToClockDiv(this->_frequency);
