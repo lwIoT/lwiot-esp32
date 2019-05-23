@@ -27,16 +27,6 @@ extern "C" {
 #define HSPI  2 //SPI bus normally mapped to pins 12 - 15, but can be matrixed to any pins
 #define VSPI  3 //SPI bus normally attached to pins 5, 18, 19 and 23, but can be matrixed to any pins
 
-// This defines are not representing the real Divider of the ESP32
-// the Defines match to an AVR Arduino on 16MHz for better compatibility
-#define SPI_CLOCK_DIV2    0x00101001 //8 MHz
-#define SPI_CLOCK_DIV4    0x00241001 //4 MHz
-#define SPI_CLOCK_DIV8    0x004c1001 //2 MHz
-#define SPI_CLOCK_DIV16   0x009c1001 //1 MHz
-#define SPI_CLOCK_DIV32   0x013c1001 //500 KHz
-#define SPI_CLOCK_DIV64   0x027c1001 //250 KHz
-#define SPI_CLOCK_DIV128  0x04fc1001 //125 KHz
-
 #define SPI_MODE0 0
 #define SPI_MODE1 1
 #define SPI_MODE2 2

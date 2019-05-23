@@ -1,6 +1,6 @@
 /*
  * ESP32 SPI bus implementation.
- *
+ * 
  * @author Michel Megens
  * @email  dev@bietje.net
  */
@@ -8,42 +8,41 @@
 #pragma once
 
 #include <stdlib.h>
-#include <string.h>
-#include <lwiot.h>
-
-#include <lwiot/log.h>
+#include <stdio.h>
 
 #include <lwiot/io/spibus.h>
 #include <lwiot/io/spimessage.h>
+#include <lwiot/log.h>
 
+#include <driver/gpio.h>
 #include <driver/spi_master.h>
-#include <driver/spi_common.h>
 
-#include <lwiot/stl/vector.h>
+struct spi_struct_t;
+typedef struct spi_struct_t spi_t;
 
-namespace lwiot
+#define HSPI 2
+#define VSPI 3
+
+namespace lwiot { namespace esp32
 {
-	namespace esp32
-	{
-		class SpiBus : public lwiot::SpiBus {
-		public:
-			explicit SpiBus(int mosi, int miso, int clk, uint32_t freq = 100000);
-			~SpiBus() override = default;
+	class SpiBus : public lwiot::SpiBus {
+	public:
+		explicit SpiBus(uint8_t clk, uint8_t miso, uint8_t mosi, uint8_t num = VSPI);
+		virtual ~SpiBus();
 
-			void setFrequency(uint32_t freq) override;
-			bool transfer(SpiMessage& msg) override ;
-			bool transfer(stl::Vector<SpiMessage>& msg) override ;
+		void setFrequency(uint32_t freq) override;
+		bool transfer(SpiMessage &msg) override;
 
-		private:
-			spi_bus_config_t _config;
+		using lwiot::SpiBus::transfer;
 
-			static constexpr int SPI_DMA_CHANNEL = 1;
-			static constexpr int SPI_QUEUE_SIZE = 7;
-			static constexpr int SPI_MODE = 0;
+	protected:
 
-			/* Methods */
-			spi_device_handle_t setup(const SpiMessage& msg);
-			void stop(spi_device_handle_t spi);
-		};
-	}
+
+	private:
+		uint32_t _frequency;
+		uint8_t _num;
+		uint32_t _div;
+		spi_t *_spi;
+	};
+}
 }

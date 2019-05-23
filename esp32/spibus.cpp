@@ -1,106 +1,73 @@
 /*
  * ESP32 SPI bus implementation.
- *
+ * 
  * @author Michel Megens
  * @email  dev@bietje.net
  */
 
 #include <stdlib.h>
-#include <string.h>
+#include <stdio.h>
 #include <lwiot.h>
+#include <esp_system.h>
 
-#include <driver/spi_master.h>
-#include <driver/spi_common.h>
-
+#include <lwiot/io/spibus.h>
+#include <lwiot/io/spimessage.h>
 #include <lwiot/log.h>
-#include <lwiot/stl/string.h>
-#include <lwiot/stl/move.h>
 
 #include <lwiot/esp32/spibus.h>
+
+#include <driver/gpio.h>
+
+#include "esp32spi.h"
+
+#define SPI_MSBFIRST 1
+#define SPI_MODE0    0
 
 namespace lwiot
 {
 	namespace esp32
 	{
-		SpiBus::SpiBus(int mosi, int miso, int clk, uint32_t freq) : lwiot::SpiBus(mosi, miso, clk, freq)
+		SpiBus::SpiBus(uint8_t num, uint8_t clk, uint8_t miso, uint8_t mosi) :
+				lwiot::SpiBus(mosi, miso, clk, 1000000UL), _frequency(1000000UL), _num(num)
 		{
-			this->_config.miso_io_num = miso;
-			this->_config.mosi_io_num = mosi;
-			this->_config.sclk_io_num = clk;
-			this->_config.quadhd_io_num = -1;
-			this->_config.quadwp_io_num = -1;
-			this->_config.max_transfer_sz = 8192;
+			this->_div = spiFrequencyToClockDiv(this->_frequency);
+			this->_spi = spiStartBus(num, this->_div, SPI_MODE0, SPI_MSBFIRST);
 
-			spi_bus_initialize(HSPI_HOST, &this->_config, SPI_DMA_CHANNEL);
+			spiAttachSCK(this->_spi, clk);
+			spiAttachMISO(this->_spi, miso);
+			spiAttachMOSI(this->_spi, mosi);
 		}
 
-		bool SpiBus::transfer(lwiot::SpiMessage &msg)
+		SpiBus::~SpiBus()
 		{
-			esp_err_t ret;
-			spi_device_handle_t spi;
-			spi_transaction_t transaction;
-
-			spi = this->setup(msg);
-			memset(&transaction, 0, sizeof(transaction));
-			transaction.length = msg.size();
-			transaction.rx_buffer = msg.rxdata().data();
-			transaction.tx_buffer = msg.txdata().data();
-
-			ret = spi_device_transmit(spi, &transaction);
-			this->stop(spi);
-
-			return ret == ESP_OK;
+			spiDetachMOSI(this->_spi, this->_mosi.pin());
+			spiDetachMISO(this->_spi, this->_miso.pin());
+			spiDetachSCK(this->_spi, this->_clk.pin());
+			spiStopBus(this->_spi);
 		}
 
-		spi_device_handle_t SpiBus::setup(const lwiot::SpiMessage &msg)
+		void SpiBus::setFrequency(uint32_t freq)
 		{
-			spi_device_handle_t spi;
-			esp_err_t ret;
-			spi_device_interface_config_t config;
+			auto clkdiv = spiFrequencyToClockDiv(freq);
 
-			config.mode = SPI_MODE;
-			config.clock_speed_hz = static_cast<int>(this->frequency());
-			config.spics_io_num = msg.cspin();
-			config.queue_size = SPI_QUEUE_SIZE;
+			this->_frequency = freq;
 
-			ret = spi_bus_add_device(HSPI_HOST, &config, &spi);
+			if(this->_div == clkdiv)
+				return;
 
-			if(ret != ESP_OK)
-				return nullptr;
-
-			return spi;
+			spiSetClockDiv(this->_spi, clkdiv);
+			this->_div = clkdiv;
 		}
 
-		void SpiBus::stop(spi_device_handle_t spi)
+		bool SpiBus::transfer(SpiMessage &msg)
 		{
-			spi_bus_remove_device(spi);
-		}
+			auto cs = msg.cspin();
 
-		bool SpiBus::transfer(lwiot::stl::Vector<lwiot::SpiMessage> &msgs)
-		{
-			esp_err_t err = ESP_ERR_INVALID_STATE;
-			spi_transaction_t transaction;
+			cs.write(false);
+			spiTransferBytes(this->_spi, msg.txdata().data(), msg.rxdata().data(), msg.size());
+			cs.write(true);
 
-			if(msgs.size() <= 0)
-				return false;
-
-			auto device = this->setup(msgs[0]);
-
-			for(auto& msg: msgs) {
-				memset(&transaction, 0, sizeof(transaction));
-
-				transaction.length = msg.size();
-				transaction.rx_buffer = msg.rxdata().data();
-				transaction.tx_buffer = msg.txdata().data();
-
-				err = spi_device_transmit(device, &transaction);
-
-				if(err != ESP_OK)
-					break;
-			}
-
-			this->stop(device);
-			return err == ESP_OK;
+			return true;
 		}
 	}
 }

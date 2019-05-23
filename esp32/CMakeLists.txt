@@ -16,8 +16,9 @@ SET(PORT_SOURCE_FILES
 	esp32_ap.cpp
 	esp32_sta.cpp
 	esp32_wifi.c
-	spibus.cpp
 	spiffs.cpp
+	spibus.cpp
+	esp32spi.c
 
 	soc/esp32.c
 	soc/esp32system.cpp
