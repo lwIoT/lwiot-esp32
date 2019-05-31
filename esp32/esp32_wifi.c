@@ -142,7 +142,6 @@ void esp32_wifi_init_station(const char *ssid, const char *pass)
 	else
 		esp_wifi_set_mode(WIFI_MODE_STA);
 
-	esp_wifi_set_mode(WIFI_MODE_STA);
 	esp_wifi_set_config(ESP_IF_WIFI_STA, &config);
 	esp_wifi_start();
 }
