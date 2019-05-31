@@ -17,6 +17,7 @@
 #include <driver/gpio.h>
 #include <rom/ets_sys.h>
 #include <sys/reent.h>
+#include <soc/gpio_struct.h>
 
 #include "esp32gpio.h"
 
@@ -75,12 +76,12 @@ static void IRAM_ATTR gpio_external_isr(void *arg)
 
 namespace lwiot { namespace esp32
 {
-	GpioChip::GpioChip() : lwiot::GpioChip(PINS)
+	GpioChip::GpioChip() : lwiot::GpioChip(PINS), _initializedIrqs(false)
 	{ }
 
 	void GpioChip::mode(int pin, const PinMode& mode)
 	{
-		gpio_num_t _pin = (gpio_num_t)pin;
+		auto _pin = static_cast<gpio_num_t>(pin);
 
 		switch(mode) {
 		case INPUT_PULLUP:
@@ -140,10 +141,9 @@ namespace lwiot { namespace esp32
 
 	void GpioChip::attachIrqHandler(int pin, irq_handler_t handler, IrqEdge edge)
 	{
-		static bool interrupt_initialized = false;
-    
-		if(!interrupt_initialized) {
-			interrupt_initialized = true;
+
+		if(!this->_initializedIrqs) {
+			this->_initializedIrqs = true;
 			esp_intr_alloc(ETS_GPIO_INTR_SOURCE, (int)ESP_INTR_FLAG_IRAM,
 				gpio_external_isr, NULL, &gpio_intr_handle);
 		}
@@ -164,6 +164,17 @@ namespace lwiot { namespace esp32
 		}
 
 		GPIO.pin[pin].int_type = type;
+		esp_intr_enable(gpio_intr_handle);
+	}
+
+	void GpioChip::detachIrqHandler(int pin)
+	{
+		if(!this->_initializedIrqs)
+			return;
+
+		esp_intr_disable(gpio_intr_handle);
+		GPIO.pin[pin].int_ena = 0;
+		GPIO.pin[pin].int_type = this->mapIrqType(IrqNone);
 		esp_intr_enable(gpio_intr_handle);
 	}
 

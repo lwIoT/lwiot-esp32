@@ -18,16 +18,19 @@ namespace lwiot { namespace esp32
 		explicit GpioChip();
 		virtual ~GpioChip() = default;
 
-		virtual void mode(int pin, const PinMode& mode) override;
-		virtual void write(int pin, bool value) override;
-		virtual bool read(int pin) const override;
+		void mode(int pin, const PinMode& mode) override;
+		void write(int pin, bool value) override;
+		bool read(int pin) const override;
 
-		virtual void setOpenDrain(int pin) override;
-		virtual void odWrite(int pin, bool value) override;
-		virtual void attachIrqHandler(int pin, irq_handler_t handler, IrqEdge edge) override;
+		void setOpenDrain(int pin) override;
+		void odWrite(int pin, bool value) override;
+		void attachIrqHandler(int pin, irq_handler_t handler, IrqEdge edge) override;
+		void detachIrqHandler(int pin) override;
 
 	private:
 		int mapIrqType(const IrqEdge& edge) const;
+
+		bool _initializedIrqs;
 	};
 }
 }
