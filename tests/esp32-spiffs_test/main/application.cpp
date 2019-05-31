@@ -30,14 +30,12 @@
 
 #include <mbedtls/md5.h>
 
-static const char *TAG = "spiffs-app";
-
 class SpiFFSApplication : public lwiot::Functor {
 private:
 	static void read_hello_txt()
 	{
 		lwiot::File file("/storage/hello.txt", lwiot::FileMode::Read);
-		ESP_LOGI(TAG, "Reading hello.txt");
+		print_dbg( "Reading hello.txt");
 
 		auto str = lwiot::stl::move(file.readString());
 		print_dbg("Read from hello.txt (%i): %s\n", str.length(), str.c_str());
@@ -75,20 +73,20 @@ protected:
 	{
 		lwiot::esp32::SpiFFS fs;
 
-		ESP_LOGI(TAG, "Initializing SPIFFS");
+		print_dbg( "Initializing SPIFFS");
 		fs.mount(false);
 
 		size_t total = fs.size();
 		size_t used = fs.used();
 
-		ESP_LOGI(TAG, "Partition size: total: %dKiB, used: %dKiB", total / 1024, used / 1024);
+		print_dbg( "Partition size: total: %dKiB, used: %dKiB", total / 1024, used / 1024);
 
 		read_hello_txt();
 
 		compute_alice_txt_md5();
 
 		fs.unmount();
-		ESP_LOGI(TAG, "SPIFFS unmounted");
+		print_dbg( "SPIFFS unmounted");
 	}
 };
 
