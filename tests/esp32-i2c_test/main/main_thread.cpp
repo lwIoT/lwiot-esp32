@@ -22,6 +22,10 @@
 #include <lwiot/io/hardwarei2calgorithm.h>
 #include <lwiot/io/gpioi2calgorithm.h>
 #include <lwiot/io/i2cmessage.h>
+#include <lwiot/io/spibus.h>
+#include <lwiot/io/spimessage.h>
+
+#include <lwiot/device/sram23k256.h>
 
 #include <lwiot/util/datetime.h>
 #include <lwiot/util/application.h>
@@ -29,7 +33,7 @@
 #include <lwiot/stl/vector.h>
 #include <lwiot/stl/string.h>
 
-#include <lwiot/esp32/esp32i2calgorithm.h>
+#include <lwiot/esp32/spibus.h>
 
 static int calculate_udelay_test(const uint32_t& frequency)
 {
@@ -55,6 +59,12 @@ protected:
 		lwiot::GpioPin sda(23);
 		auto algo = new lwiot::HardwareI2CAlgorithm(scl, sda, 400000U);
 		lwiot::I2CBus bus(algo);
+		lwiot::esp32::SpiBus spi(5, 19, 18);
+		lwiot::SRAM23K256 sram(spi, 21);
+		lwiot::GpioPin cs = 21;
+
+		cs.mode(lwiot::PinMode::OUTPUT);
+		cs.write(true);
 
 		printf("Main thread started!\n");
 		lwiot_sleep(1000);
@@ -64,7 +74,7 @@ protected:
 		freesize = heap_caps_get_free_size(0);
 		wdt.enable();
 
-		print_dbg("Free heap size: %u\n", freesize);
+		print_dbg("Free heap size: %uKiB\n", freesize / 1024);
 		print_dbg("GPIO I2C udelay value: %i\n", calculate_udelay_test(100000UL));
 
 		print_dbg("Testing I2C bus..\n");
@@ -81,12 +91,16 @@ protected:
 		lwiot::FunctionalThread td("functp", func);
 		td.start();
 
+		sram.begin();
 
 		while(true) {
+			const char buf[] = "ABCD\0";
 			lwiot::stl::Vector<lwiot::I2CMessage*> msgs;
 			lwiot::I2CMessage wr(1);
 			lwiot::I2CMessage rd(32);
 			lwiot::I2CMessage rd2(32);
+
+			lwiot::ByteBuffer spibuf(4);
 
 			wr.setRepeatedStart(true);
 			wr.setAddress(0x6B, false, false);
@@ -97,6 +111,13 @@ protected:
 			rd.setRepeatedStart(true);
 			rd2.setAddress(0x6B, false, false);
 			rd2.setRepeatedStart(false);
+
+			spibuf.write(buf, sizeof(buf));
+			sram.write(0x20, spibuf);
+			lwiot_sleep(20);
+			spibuf = lwiot::stl::move( sram.read(0x20, sizeof(buf)) );
+
+			print_dbg("SRAM readback: %s\n", (char*)spibuf.data());
 
 			for(int i = 0; i < 16; i++) {
 				rd.write('a');
