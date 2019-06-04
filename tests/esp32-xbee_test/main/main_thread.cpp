@@ -30,6 +30,7 @@ protected:
 		lwiot::XBee xbee;
 		lwiot::Rx16Response rx16 = lwiot::Rx16Response();
 		lwiot::Rx64Response rx64 = lwiot::Rx64Response();
+		lwiot::ZBRxResponse rxZB;
 
 		printf("Main thread started!\n");
 		xbee.begin(uart);
@@ -40,12 +41,17 @@ protected:
 
 			if (xbee.getResponse().isAvailable()) {
 				print_dbg("Packet received!\n");
-				if (xbee.getResponse().getApiId() == RX_16_RESPONSE || xbee.getResponse().getApiId() == RX_64_RESPONSE) {
+				if (xbee.getResponse().getApiId() == RX_16_RESPONSE ||
+					xbee.getResponse().getApiId() == RX_64_RESPONSE ||
+					xbee.getResponse().getApiId() == ZB_RX_RESPONSE) {
 					uint8_t *data;
 
 					if (xbee.getResponse().getApiId() == RX_16_RESPONSE) {
 						xbee.getResponse().getRx16Response(rx16);
 						data = rx16.getData();
+					} else if(xbee.getResponse().getApiId() == ZB_RX_RESPONSE) {
+						xbee.getResponse().getZBRxResponse(rxZB);
+						data = rxZB.getData();
 					} else {
 						xbee.getResponse().getRx64Response(rx64);
 						data = rx64.getData();
@@ -53,11 +59,13 @@ protected:
 
 					print_dbg("Received: %c%c%c\n", data[0], data[1], data[2]);
 				} else {
-					print_dbg("Unexpected response..\n");
+					print_dbg("Unexpected response..: %u\n", xbee.getResponse().getApiId());
 				}
 			} else if (xbee.getResponse().isError()) {
 				print_dbg("Xbee error: %u\n", xbee.getResponse().getErrorCode());
 			}
+
+			lwiot::Thread::sleep(10);
 		}
 	}
 };
