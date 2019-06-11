@@ -41,9 +41,9 @@ namespace lwiot
 			config.sda_pullup_en = GPIO_PULLUP_DISABLE;
 			config.master.clk_speed = frequency;
 
-			ESP_ERROR_CHECK(i2c_param_config(this->_port, &config));
-			ESP_ERROR_CHECK(i2c_driver_install(this->_port, config.mode, 0, 0, 0));
-			ESP_ERROR_CHECK(i2c_set_timeout(this->_port, 20000));
+			ESP_ERROR_CHECK(i2c_param_config(this->_port, &config))
+			ESP_ERROR_CHECK(i2c_driver_install(this->_port, config.mode, 0, 0, 0))
+			ESP_ERROR_CHECK(i2c_set_timeout(this->_port, 20000))
 			this->patchClock();
 
 			handle = nullptr;

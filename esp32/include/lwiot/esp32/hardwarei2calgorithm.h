@@ -28,7 +28,7 @@ namespace lwiot
 		class HardwareI2CAlgorithm : public lwiot::HardwareI2CAlgorithm {
 		public:
 			HardwareI2CAlgorithm(const GpioPin& scl, const GpioPin& sda, uint32_t frequency);
-			explicit HardwareI2CAlgorithm(HardwareI2CAlgorithm&& other) noexcept;
+			HardwareI2CAlgorithm(HardwareI2CAlgorithm&& other) noexcept;
 			virtual ~HardwareI2CAlgorithm();
 
 			HardwareI2CAlgorithm& operator=(HardwareI2CAlgorithm&& rhs) noexcept;
