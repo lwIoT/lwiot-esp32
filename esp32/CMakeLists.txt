@@ -19,6 +19,7 @@ SET(PORT_SOURCE_FILES
 	spiffs.cpp
 	spibus.cpp
 	esp32spi.c
+	hardwarei2calgorithm.cpp
 
 	soc/esp32.c
 	soc/esp32system.cpp
