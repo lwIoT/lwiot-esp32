@@ -34,6 +34,7 @@
 #include <lwiot/stl/string.h>
 
 #include <lwiot/esp32/spibus.h>
+#include <lwiot/esp32/hardwarei2calgorithm.h>
 
 static int calculate_udelay_test(const uint32_t& frequency)
 {
@@ -57,7 +58,7 @@ protected:
 		size_t freesize;
 		lwiot::GpioPin scl(22);
 		lwiot::GpioPin sda(23);
-		auto algo = new lwiot::HardwareI2CAlgorithm(scl, sda, 400000U);
+		auto algo = new lwiot::esp32::HardwareI2CAlgorithm(scl, sda, 400000U);
 		lwiot::I2CBus bus(algo);
 		lwiot::esp32::SpiBus spi(5, 19, 18);
 		lwiot::SRAM23K256 sram(spi, 21);
