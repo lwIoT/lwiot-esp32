@@ -37,7 +37,7 @@
 #include <lwiot/stl/move.h>
 
 #include <lwiot/esp32/esp32pwm.h>
-#include <lwiot/esp32/esp32i2calgorithm.h>
+#include <lwiot/esp32/hardwarei2calgorithm.h>
 #include <lwiot/esp32/esp32ap.h>
 
 static double luxdata = 0x0;
@@ -127,7 +127,7 @@ protected:
 	{
 		lwiot::esp32::PwmTimer timer(0, MCPWM_UNIT_0, 100);
 		lwiot::DateTime dt(1539189832);
-		lwiot::I2CBus bus(new lwiot::HardwareI2CAlgorithm(22, 23, 400000));
+		lwiot::I2CBus bus(new lwiot::esp32::HardwareI2CAlgorithm(22, 23, 400000));
 		lwiot::IPAddress local(192, 168, 1, 1);
 
 		lwiot_sleep(1000);
@@ -147,7 +147,8 @@ protected:
 		udp->bind();
 		dns.begin(udp);
 
-		wdt.enable(2000);
+		//wdt.enable(2000);
+		wdt.disable();
 
 		lwiot::Apds9301Sensor sensor(bus);
 		sensor.begin();

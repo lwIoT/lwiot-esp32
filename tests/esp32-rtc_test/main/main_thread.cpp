@@ -22,8 +22,18 @@
 #include <lwiot/io/hardwarei2calgorithm.h>
 #include <lwiot/io/gpioi2calgorithm.h>
 
+#include <lwiot/esp32/hardwarei2calgorithm.h>
+
 #include <lwiot/device/dsrealtimeclock.h>
 #include <lwiot/util/datetime.h>
+
+static lwiot::DateTime now;
+static volatile bool triggered = false;
+
+static void timer_handler()
+{
+	triggered = true;
+}
 
 class MainThread : public lwiot::Thread {
 public:
@@ -34,20 +44,25 @@ public:
 protected:
 	void run() override
 	{
-		auto algo = new lwiot::HardwareI2CAlgorithm(22, 23, 400000U);
+		auto algo = new lwiot::esp32::HardwareI2CAlgorithm(22, 21, 400000U);
 		lwiot::I2CBus bus(algo);
 		lwiot::DsRealTimeClock rtc(bus);
 		lwiot::DateTime dt(1500000000);
 
 		lwiot_sleep(100); // Stabilize application
+		gpio.attachIrqHandler(23, timer_handler, lwiot::IrqEdge::IrqRising);
 
 		rtc.set(dt);
 		wdt.enable(2000);
 
 		while(true) {
-			lwiot::DateTime now = rtc.now();
+			now = rtc.now();
 
-			print_dbg("MT ping: %s\n", now.toString().c_str());
+			if(triggered) {
+				triggered = false;
+				print_dbg("Timer triggered at: %s\n", now.toString().c_str());
+			}
+
 			wdt.reset();
 			lwiot_sleep(1000);
 		}
