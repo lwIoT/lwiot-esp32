@@ -41,7 +41,7 @@ static esp_err_t wifi_event_handler(void *ctx, system_event_t *event)
         break;
 
     case SYSTEM_EVENT_STA_GOT_IP:
-        print_dbg("[WIFI]: got ip: %s",
+        print_dbg("[WIFI]: got ip: %s\n",
                  ip4addr_ntoa(&event->event_info.got_ip.ip_info.ip));
         xEventGroupSetBits(wifi_events, WIFI_CONNECTED);
 		esp32_wifi_station_event(event);
