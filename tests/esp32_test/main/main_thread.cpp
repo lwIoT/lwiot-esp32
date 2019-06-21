@@ -31,16 +31,23 @@
 #include <lwiot/network/udpserver.h>
 #include <lwiot/network/udpclient.h>
 #include <lwiot/network/sockettcpserver.h>
+#include <lwiot/network/sockettcpclient.h>
 #include <lwiot/network/wifiaccesspoint.h>
+#include <lwiot/network/wifistation.h>
 #include <lwiot/network/dnsserver.h>
+
+#include <lwiot/network/asyncmqttclient.h>
 
 #include <lwiot/stl/move.h>
 
 #include <lwiot/esp32/esp32pwm.h>
 #include <lwiot/esp32/hardwarei2calgorithm.h>
 #include <lwiot/esp32/esp32ap.h>
+#include <lwiot/esp32/esp32sta.h>
 
 static double luxdata = 0x0;
+static int a = 0;
+static int b = 0;
 
 class HttpServerThread : public lwiot::Thread {
 public:
@@ -123,20 +130,67 @@ protected:
 		ap.begin(ssid, passw, 4, false, 4);
 	}
 
+	void startStation()
+	{
+		auto& sta = lwiot::esp32::WifiStation::instance();
+		sta.connectTo("bietje", "banaan01");
+		while(sta.status() != lwiot::WL_CONNECTED) {
+			lwiot_sleep(100);
+		}
+	}
+
+	void subscribe(lwiot::AsyncMqttClient& mqtt)
+	{
+		print_dbg("Subscribing...\n");
+		mqtt.subscribe("test/subscribe/1", [&](const lwiot::ByteBuffer& payload) {
+			lwiot::stl::String str(payload);
+
+			a++;
+			print_dbg("Data (subscribe/1): %s\n", str.c_str());
+		}, lwiot::MqttClient::QOS0);
+
+		mqtt.subscribe("test/subscribe/2", [&](const lwiot::ByteBuffer& payload) {
+			lwiot::stl::String str(payload);
+
+			b++;
+			print_dbg("Data (subscribe/2): %s\n", str.c_str());
+		}, lwiot::MqttClient::QOS0);
+	}
+
 	virtual void run() override
 	{
 		lwiot::esp32::PwmTimer timer(0, MCPWM_UNIT_0, 100);
 		lwiot::DateTime dt(1539189832);
 		lwiot::I2CBus bus(new lwiot::esp32::HardwareI2CAlgorithm(22, 23, 400000));
 		lwiot::IPAddress local(192, 168, 1, 1);
+		lwiot::IPAddress serveraddr(178, 62, 207, 160);
+		lwiot::AsyncMqttClient mqtt;
 
 		lwiot_sleep(1000);
 		this->startPwm(timer);
 		printf("Main thread started!\n");
 
 		print_dbg("Time: %s\n", dt.toString().c_str());
+		lwiot::Function<void()> recon_handler = [&]() {
+			this->subscribe(mqtt);
+		};
 
+		mqtt.setReconnectHandler(recon_handler);
+
+		this->startStation();
 		this->startAP("lwIoT test", "testap1234");
+
+		a = b = 0;
+
+		print_dbg("Correct address: %u\n", (uint32_t) serveraddr);
+		lwiot::SocketTcpClient client("mail.sonatolabs.com", 1883);
+		mqtt.start(client);
+		mqtt.connect("lwiot-test", "test", "test");
+
+		this->subscribe(mqtt);
+
+		print_dbg("MQTT connected!\n");
+
 
 		lwiot::SocketUdpServer* udp = new lwiot::SocketUdpServer(BIND_ADDR_ANY, 53);
 		lwiot::DnsServer dns;
@@ -161,7 +215,10 @@ protected:
 			sensor.getLux(luxdata);
 
 			auto freesize = heap_caps_get_free_size(MALLOC_CAP_DEFAULT) / 1024;
-			printf("[%lu] PING: free memory: %uKiB\n", lwiot_tick_ms(), freesize);
+			print_dbg("[%lu] PING: free memory: %uKiB\n", lwiot_tick_ms(), freesize);
+
+			mqtt.publish("test/subscribe/1", "Test message for s1", false);
+			mqtt.publish("test/subscribe/2", "Test message for s2", false);
 
 			lwiot_sleep(1000);
 		}
