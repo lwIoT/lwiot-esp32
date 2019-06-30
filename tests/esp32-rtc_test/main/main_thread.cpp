@@ -48,20 +48,33 @@ protected:
 		lwiot::I2CBus bus(algo);
 		lwiot::DsRealTimeClock rtc(bus);
 		lwiot::DateTime dt(1500000000);
+		lwiot::DateTime alarm(0);
 
 		lwiot_sleep(100); // Stabilize application
 		gpio.attachIrqHandler(23, timer_handler, lwiot::IrqEdge::IrqRising);
 
 		rtc.set(dt);
+		lwiot_sleep(10);
+		rtc.setAlarm(lwiot::DsRealTimeClock::ALARM1_MATCH_SECONDS, 10, 0,0,2);
+		rtc.alarm(lwiot::DsRealTimeClock::Alarm::ALARM_ONE);
+		rtc.alarm(lwiot::DsRealTimeClock::Alarm::ALARM_TWO);
+		rtc.enableAlarmInterrupt(lwiot::DsRealTimeClock::ALARM_ONE, true);
 		wdt.enable(2000);
 
 		while(true) {
 			now = rtc.now();
+			print_dbg("PING\n");
 
 			if(triggered) {
 				triggered = false;
 				print_dbg("Timer triggered at: %s\n", now.toString().c_str());
 			}
+
+			/*if(rtc.alarm(lwiot::DsRealTimeClock::Alarm::ALARM_ONE)) {
+				print_dbg("Alarm triggered!\n");
+				alarm.sync(1500000030);
+				rtc.setAlarm(lwiot::DsRealTimeClock::ALARM1_MATCH_DATE, alarm);
+			}*/
 
 			wdt.reset();
 			lwiot_sleep(1000);

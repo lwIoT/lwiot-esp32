@@ -35,6 +35,8 @@
 #include <lwiot/network/wifiaccesspoint.h>
 #include <lwiot/network/wifistation.h>
 #include <lwiot/network/dnsserver.h>
+#include <lwiot/network/ntpclient.h>
+#include <lwiot/network/socketudpclient.h>
 
 #include <lwiot/network/asyncmqttclient.h>
 
@@ -163,8 +165,9 @@ protected:
 		lwiot::DateTime dt(1539189832);
 		lwiot::I2CBus bus(new lwiot::esp32::HardwareI2CAlgorithm(22, 23, 400000));
 		lwiot::IPAddress local(192, 168, 1, 1);
-		lwiot::IPAddress serveraddr(178, 62, 207, 160);
 		lwiot::AsyncMqttClient mqtt;
+		lwiot::SocketUdpClient udp_client;
+		lwiot::NtpClient ntp;
 
 		lwiot_sleep(1000);
 		this->startPwm(timer);
@@ -182,15 +185,13 @@ protected:
 
 		a = b = 0;
 
-		print_dbg("Correct address: %u\n", (uint32_t) serveraddr);
 		lwiot::SocketTcpClient client("mail.sonatolabs.com", 1883);
 		mqtt.start(client);
 		mqtt.connect("lwiot-test", "test", "test");
 
 		this->subscribe(mqtt);
-
-		print_dbg("MQTT connected!\n");
-
+		udp_client.begin("pool.ntp.org", 123);
+		ntp.begin(udp_client);
 
 		lwiot::SocketUdpServer* udp = new lwiot::SocketUdpServer(BIND_ADDR_ANY, 53);
 		lwiot::DnsServer dns;
@@ -213,6 +214,10 @@ protected:
 			wdt.reset();
 
 			sensor.getLux(luxdata);
+
+			ntp.update();
+			lwiot::DateTime now(ntp.time());
+			print_dbg("[%s]: Lux value: %f\n", now.toString().c_str(), luxdata);
 
 			auto freesize = heap_caps_get_free_size(MALLOC_CAP_DEFAULT) / 1024;
 			print_dbg("[%lu] PING: free memory: %uKiB\n", lwiot_tick_ms(), freesize);

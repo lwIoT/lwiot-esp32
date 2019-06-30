@@ -20,7 +20,6 @@
 
 #include <lwiot/esp32/esp32i2calgorithm.h>
 
-
 #include <driver/i2c.h>
 
 #define ACK I2C_MASTER_ACK
@@ -31,7 +30,7 @@
 namespace lwiot { namespace esp32
 {
 	I2CAlgorithm::I2CAlgorithm(int sda, int scl, uint32_t freq, i2c_port_t num) :
-		lwiot::I2CAlgorithm(), _sda(sda), _scl(scl), _portno(num)
+		lwiot::I2CAlgorithm(), _sda(sda), _scl(scl), _portno(num), config({})
 	{
 		this->_sda.setOpenDrain();
 		this->_scl.setOpenDrain();
@@ -87,13 +86,12 @@ namespace lwiot { namespace esp32
 		return msg.count();
 	}
 
-	ssize_t I2CAlgorithm::transfer(stl::Vector<I2CMessage*>& msgs)
+	ssize_t I2CAlgorithm::transfer(stl::Vector<I2CMessage>& msgs)
 	{
 		i2c_cmd_handle_t handle = i2c_cmd_link_create();
 		ssize_t total = 0L;
 
-		for(auto& _msg : msgs) {
-			auto& msg = *_msg;
+		for(auto& msg : msgs) {
 
 			i2c_master_start(handle);
 			this->prepareTransfer(handle, msg);

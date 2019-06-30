@@ -32,7 +32,7 @@ namespace lwiot { namespace esp32
 		~I2CAlgorithm() override;
 
 		ssize_t transfer(I2CMessage& msg) override;
-		ssize_t transfer(stl::Vector<I2CMessage*>& msgs) override;
+		ssize_t transfer(stl::Vector<I2CMessage>& msgs) override;
 		void setFrequency(const uint32_t& freq) override;
 
 	private:

@@ -96,7 +96,7 @@ protected:
 
 		while(true) {
 			const char buf[] = "ABCD\0";
-			lwiot::stl::Vector<lwiot::I2CMessage*> msgs;
+			lwiot::stl::Vector<lwiot::I2CMessage> msgs;
 			lwiot::I2CMessage wr(1);
 			lwiot::I2CMessage rd(32);
 			lwiot::I2CMessage rd2(32);
@@ -106,7 +106,7 @@ protected:
 			wr.setRepeatedStart(true);
 			wr.setAddress(0x6B, false, false);
 			wr.write(2);
-			msgs.pushback(&wr);
+			msgs.pushback(lwiot::stl::move(wr));
 
 			rd.setAddress(0x6B, false, false);
 			rd.setRepeatedStart(true);
@@ -128,20 +128,19 @@ protected:
 				rd2.write('d');
 			}
 
-			msgs.pushback(&rd);
-			msgs.pushback(&rd);
-			msgs.pushback(&rd);
-			msgs.pushback(&rd);
-			msgs.pushback(&rd);
-			msgs.pushback(&rd);
+			msgs.pushback(rd);
+			msgs.pushback(rd);
+			msgs.pushback(rd);
+			msgs.pushback(rd);
+			msgs.pushback(rd);
+			msgs.pushback(rd);
 
-			msgs.pushback(&rd2);
+			msgs.pushback(lwiot::stl::move(rd2));
 
 			print_dbg("Writing I2C msg\n");
 			if(!bus.transfer(msgs)) {
 				print_dbg("Failed to write I2C bus!\n");
 			}
-
 
 			lwiot_sleep(200);
 			wdt.reset();
@@ -177,7 +176,7 @@ private:
 	void testRead(lwiot::I2CBus& bus)
 	{
 		lwiot::I2CMessage wr(1), rd(3);
-		lwiot::stl::Vector<lwiot::I2CMessage*> msgs;
+		lwiot::stl::Vector<lwiot::I2CMessage> msgs;
 
 		wr.setAddress(0x6B, false, false);
 		wr.write(1);
@@ -186,8 +185,8 @@ private:
 		rd.setAddress(0x6B, false, true);
 		rd.setRepeatedStart( false);
 
-		msgs.pushback(&wr);
-		msgs.pushback(&rd);
+		msgs.pushback(lwiot::stl::move(wr));
+		msgs.pushback(lwiot::stl::move(rd));
 
 		if(bus.transfer(msgs)) {
 			print_dbg("Read test successfull!\n");
@@ -195,7 +194,8 @@ private:
 			print_dbg("Read test failed!\n");
 		}
 
-		auto& msg = *msgs[1];
+		auto msg = lwiot::stl::move(msgs.back());
+
 		print_dbg("Read data:\n");
 		print_dbg("Read byte: %u\n", msg[0]);
 		print_dbg("Read byte: %u\n", msg[1]);
