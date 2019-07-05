@@ -135,7 +135,7 @@ protected:
 	void startStation()
 	{
 		auto& sta = lwiot::esp32::WifiStation::instance();
-		sta.connectTo("Intranet", "plofkip01");
+		sta.connectTo("bietje", "banaan01");
 		while(sta.status() != lwiot::WL_CONNECTED) {
 			lwiot_sleep(100);
 		}
@@ -188,12 +188,11 @@ protected:
 		a = b = 0;
 
 		lwiot::SocketTcpClient client("mail.sonatolabs.com", 1883);
+		client.setTimeout(2000);
 		mqtt.start(client);
 		mqtt.connect("lwiot-test", "test", "test");
 
 		this->subscribe(mqtt);
-		udp_client.begin("nl.pool.ntp.org", 123);
-		ntp.begin(udp_client);
 
 		lwiot::SocketUdpServer* udp = new lwiot::SocketUdpServer(BIND_ADDR_ANY, 53);
 		lwiot::DnsServer dns;
@@ -209,9 +208,11 @@ protected:
 		auto http = new HttpServerThread(nullptr);
 		http->start();
 
-		wdt.enable(3000);
+		wdt.enable(6000);
 
 		while(true) {
+			udp_client.begin("nl.pool.ntp.org", 123);
+			ntp.begin(udp_client);
 			wdt.reset();
 
 			sensor.getLux(luxdata);
@@ -219,17 +220,19 @@ protected:
 			auto update_ok = ntp.update();
 			lwiot::DateTime now(ntp.time());
 
-			if(!update_ok)
+			if(!update_ok) {
 				print_dbg("Unable to update time!\n");
+				wdt.reset();
+			}
 
 			print_dbg("[%s]: Lux value: %f\n", now.toString().c_str(), luxdata);
 
 			auto freesize = heap_caps_get_free_size(MALLOC_CAP_DEFAULT) / 1024;
 			print_dbg("[%lu] PING: free memory: %uKiB\n", lwiot_tick_ms(), freesize);
 
-			wdt.reset();
 			mqtt.publish("test/subscribe/1", "Test message for s1", false);
 			mqtt.publish("test/subscribe/2", "Test message for s2", false);
+			wdt.reset();
 
 			lwiot_sleep(1000);
 		}

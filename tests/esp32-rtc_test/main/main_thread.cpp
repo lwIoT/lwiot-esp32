@@ -44,14 +44,16 @@ public:
 protected:
 	void run() override
 	{
-		auto algo = new lwiot::esp32::HardwareI2CAlgorithm(22, 21, 400000U);
+		lwiot::GpioPin scl(22), sda(21);
+		auto algo = new lwiot::esp32::HardwareI2CAlgorithm(scl, sda, 400000U);
 		lwiot::I2CBus bus(algo);
 		lwiot::DsRealTimeClock rtc(bus);
 		lwiot::DateTime dt(1500000000);
-		lwiot::DateTime alarm(0);
 
 		lwiot_sleep(100); // Stabilize application
-		gpio.attachIrqHandler(23, timer_handler, lwiot::IrqEdge::IrqRising);
+
+		//gpio.attachIrqHandler(23, timer_handler, lwiot::IrqEdge::IrqRising);
+		gpio.attachIrqHandler(14, timer_handler, lwiot::IrqEdge::IrqFalling);
 
 		rtc.set(dt);
 		lwiot_sleep(10);
@@ -59,22 +61,22 @@ protected:
 		rtc.alarm(lwiot::DsRealTimeClock::Alarm::ALARM_ONE);
 		rtc.alarm(lwiot::DsRealTimeClock::Alarm::ALARM_TWO);
 		rtc.enableAlarmInterrupt(lwiot::DsRealTimeClock::ALARM_ONE, true);
+
 		wdt.enable(2000);
 
 		while(true) {
 			now = rtc.now();
-			print_dbg("PING\n");
+			print_dbg("PING: %s\n", now.toString().c_str());
 
 			if(triggered) {
 				triggered = false;
 				print_dbg("Timer triggered at: %s\n", now.toString().c_str());
 			}
 
-			/*if(rtc.alarm(lwiot::DsRealTimeClock::Alarm::ALARM_ONE)) {
+			if(rtc.alarm(lwiot::DsRealTimeClock::Alarm::ALARM_ONE)) {
 				print_dbg("Alarm triggered!\n");
-				alarm.sync(1500000030);
-				rtc.setAlarm(lwiot::DsRealTimeClock::ALARM1_MATCH_DATE, alarm);
-			}*/
+				rtc.setAlarm(lwiot::DsRealTimeClock::ALARM1_MATCH_SECONDS, 15);
+			}
 
 			wdt.reset();
 			lwiot_sleep(1000);
