@@ -19,6 +19,7 @@
 #include <lwiot/io/gpiopin.h>
 #include <lwiot/io/watchdog.h>
 #include <lwiot/util/datetime.h>
+#include <lwiot/util/guid.h>
 #include <lwiot/io/gpioi2calgorithm.h>
 #include <lwiot/io/i2cbus.h>
 #include <lwiot/io/i2cmessage.h>
@@ -108,7 +109,7 @@ protected:
 	void startPwm(lwiot::esp32::PwmTimer& timer)
 	{
 		auto& channel = timer[0];
-		auto pin = lwiot::GpioPin(5);
+		auto pin = lwiot::GpioPin(27);
 
 		channel.setGpioPin(pin);
 		channel.setDutyCycle(75.0f);
@@ -135,7 +136,7 @@ protected:
 	void startStation()
 	{
 		auto& sta = lwiot::esp32::WifiStation::instance();
-		sta.connectTo("bietje", "banaan01");
+		sta.connectTo("Intranet", "plofkip01");
 		while(sta.status() != lwiot::WL_CONNECTED) {
 			lwiot_sleep(100);
 		}
@@ -168,6 +169,7 @@ protected:
 		lwiot::AsyncMqttClient mqtt;
 		lwiot::SocketUdpClient udp_client;
 		lwiot::NtpClient ntp;
+		lwiot::Guid guid;
 
 		lwiot_sleep(1000);
 		wdt.disable();
@@ -190,7 +192,17 @@ protected:
 		lwiot::SocketTcpClient client("mail.sonatolabs.com", 1883);
 		client.setTimeout(2000);
 		mqtt.start(client);
-		mqtt.connect("lwiot-test", "test", "test");
+
+		if(!mqtt.connect(guid.toString(), "test", "test")) {
+			print_dbg("Failed to connect to MQTT\n");
+		}
+
+		while(!mqtt.connected()) {
+			print_dbg("Waiting for MQTT to connect!\n");
+			Thread::sleep(1000);
+		}
+
+		lwiot_sleep(100);
 
 		this->subscribe(mqtt);
 
@@ -212,6 +224,7 @@ protected:
 
 		while(true) {
 			udp_client.begin("nl.pool.ntp.org", 123);
+			udp_client.setTimeout(700);
 			ntp.begin(udp_client);
 			wdt.reset();
 
