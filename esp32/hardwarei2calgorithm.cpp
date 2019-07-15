@@ -44,6 +44,7 @@ namespace lwiot
 			ESP_ERROR_CHECK(i2c_param_config(this->_port, &config))
 			ESP_ERROR_CHECK(i2c_driver_install(this->_port, config.mode, 0, 0, 0))
 			ESP_ERROR_CHECK(i2c_set_timeout(this->_port, 20000))
+			ESP_ERROR_CHECK(i2c_filter_enable(this->_port, 4))
 			this->patchClock();
 
 			handle = nullptr;
@@ -78,8 +79,8 @@ namespace lwiot
 
 			i2c_get_period(this->_port, &hi, &lo);
 
-			hi -= 10;
-			lo -= 10;
+			hi -= 7;
+			lo -= 7;
 
 			i2c_set_period(this->_port, hi, lo);
 #endif
