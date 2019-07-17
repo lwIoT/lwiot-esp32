@@ -82,7 +82,8 @@ namespace lwiot { namespace esp32
 	{
 		auto num = static_cast<mcpwm_timer_t>(this->_timer._num);
 
-		mcpwm_set_frequency(this->_timer.unit(), num, this->freq_cache);
+		if(this->freq_cache > 0)
+			mcpwm_set_frequency(this->_timer.unit(), num, this->freq_cache);
 		mcpwm_set_duty(this->_timer.unit(), num, this->toOperator(), this->duty());
 	}
 
