@@ -116,8 +116,7 @@ protected:
 		channel.enable();
 		lwiot_sleep(2000);
 
-		channel.setDutyCycle(50.0f);
-		timer.setFrequency(100);
+		channel.setDutyCycle(15.0f);
 		channel.reload();
 	}
 
