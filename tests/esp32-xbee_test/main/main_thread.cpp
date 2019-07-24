@@ -39,11 +39,12 @@ protected:
 		lwiot::Rx64Response rx64;
 		lwiot::Rx16Response rx16;
 		lwiot::ZBRxResponse rxZB;
+		lwiot::ZBExplicitRxResponse explicitRx;
 
 		print_dbg("Packet received!\n");
 		if (response.isAvailable()) {
 			if(response.getApiId() == RX_16_RESPONSE || response.getApiId() == RX_64_RESPONSE ||
-					response.getApiId() == ZB_RX_RESPONSE) {
+					response.getApiId() == ZB_RX_RESPONSE || response.getApiId() == ZB_EXPLICIT_RX_RESPONSE) {
 				uint8_t *data;
 
 				if (response.getApiId() == RX_16_RESPONSE) {
@@ -52,6 +53,9 @@ protected:
 				} else if(response.getApiId() == ZB_RX_RESPONSE) {
 					response.getZBRxResponse(rxZB);
 					data = rxZB.getData();
+				} else if(response.getApiId() == ZB_EXPLICIT_RX_RESPONSE) {
+					response.getZBExplicitRxResponse(explicitRx);
+					data = explicitRx.getData();
 				} else {
 					response.getRx64Response(rx64);
 					data = rx64.getData();
@@ -107,7 +111,7 @@ protected:
 		while(true) {
 			print_dbg("Network address: 0x%X\n", this->_xb.getNetworkAddress());
 			print_dbg("Parent address: 0x%X\n", this->_xb.getParentAddress());
-			this->_xb.transmit(ZigbeeAddress(0x602F), txdata);
+			this->_xb.transmit(ZigbeeAddress(0xAE43), txdata);
 			print_dbg("PING!\n");
 			Thread::sleep(200);
 		}
