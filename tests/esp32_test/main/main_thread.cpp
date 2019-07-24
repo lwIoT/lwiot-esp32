@@ -69,6 +69,7 @@ protected:
 
 		while(true) {
 			server.handleClient();
+			wdt.reset();
 		}
 	}
 
@@ -129,14 +130,15 @@ protected:
 
 		ap.start();
 		ap.config(local, gw, subnet);
-		ap.begin(ssid, passw, 4, false, 4);
+		ap.begin(ssid, passw, 8, false, 4);
 	}
 
 	void startStation()
 	{
 		auto& sta = lwiot::esp32::WifiStation::instance();
-		sta.connectTo("Intranet", "plofkip01");
+		sta.connectTo("Intranet", "Plofkipbanaan01");
 		while(sta.status() != lwiot::WL_CONNECTED) {
+			wdt.reset();
 			lwiot_sleep(100);
 		}
 	}
@@ -222,9 +224,16 @@ protected:
 		wdt.enable(6000);
 
 		while(true) {
-			udp_client.begin("nl.pool.ntp.org", 123);
-			udp_client.setTimeout(700);
-			ntp.begin(udp_client);
+			if(lwiot::esp32::WifiStation::instance().status() == lwiot::WL_CONNECTED) {
+				udp_client.begin("nl.pool.ntp.org", 123);
+				udp_client.setTimeout(700);
+				ntp.begin(udp_client);
+			} else {
+				this->startStation();
+				wdt.reset();
+				continue;
+			}
+
 			wdt.reset();
 
 			sensor.getLux(luxdata);
@@ -242,8 +251,11 @@ protected:
 			auto freesize = heap_caps_get_free_size(MALLOC_CAP_DEFAULT) / 1024;
 			print_dbg("[%lu] PING: free memory: %uKiB\n", lwiot_tick_ms(), freesize);
 
-			mqtt.publish("test/subscribe/1", "Test message for s1", false);
-			mqtt.publish("test/subscribe/2", "Test message for s2", false);
+			if(lwiot::esp32::WifiStation::instance().status() == lwiot::WL_CONNECTED) {
+				mqtt.publish("test/subscribe/1", "Test message for s1", false);
+				mqtt.publish("test/subscribe/2", "Test message for s2", false);
+			}
+
 			wdt.reset();
 
 			lwiot_sleep(1000);
