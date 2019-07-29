@@ -23,6 +23,7 @@
 #include <lwiot/io/gpioi2calgorithm.h>
 #include <lwiot/io/i2cbus.h>
 #include <lwiot/io/i2cmessage.h>
+#include <lwiot/kernel/atomic.h>
 #include <lwiot/io/hardwarei2calgorithm.h>
 #include <lwiot/device/apds9301sensor.h>
 #include <lwiot/device/dsrealtimeclock.h>
@@ -31,6 +32,7 @@
 #include <lwiot/network/socketudpserver.h>
 #include <lwiot/network/udpserver.h>
 #include <lwiot/network/udpclient.h>
+#include <lwiot/network/dnsclient.h>
 #include <lwiot/network/sockettcpserver.h>
 #include <lwiot/network/sockettcpclient.h>
 #include <lwiot/network/wifiaccesspoint.h>
@@ -46,6 +48,7 @@
 #include <lwiot/esp32/esp32pwm.h>
 #include <lwiot/esp32/hardwarei2calgorithm.h>
 #include <lwiot/esp32/esp32ap.h>
+#include <lwiot/esp32/esp32watchdog.h>
 #include <lwiot/esp32/esp32sta.h>
 
 static double luxdata = 0x0;
@@ -54,14 +57,14 @@ static int b = 0;
 
 class HttpServerThread : public lwiot::Thread {
 public:
-	explicit HttpServerThread(const char *arg) : Thread("http-thread", (void*)arg)
+	explicit HttpServerThread(const char *arg) : Thread("http-thread", (void *) arg)
 	{
 	}
 
 protected:
 	void run() override
 	{
-		auto srv = new lwiot::SocketTcpServer(lwiot::IPAddress(192,168,1,1), 80);
+		auto srv = new lwiot::SocketTcpServer(lwiot::IPAddress(192, 168, 1, 1), 80);
 		lwiot::HttpServer server(srv);
 
 		this->setup_server(server);
@@ -73,9 +76,9 @@ protected:
 		}
 	}
 
-	void setup_server(lwiot::HttpServer& server)
+	void setup_server(lwiot::HttpServer &server)
 	{
-		server.on("/", [](lwiot::HttpServer& _server) -> void {
+		server.on("/", [](lwiot::HttpServer &_server) -> void {
 			char temp[500];
 			snprintf(temp, 500,
 			         "<html>\
@@ -102,14 +105,14 @@ protected:
 
 class MainThread : public lwiot::Thread {
 public:
-	explicit MainThread(const char *arg) : Thread("main-thread", (void*)arg)
+	explicit MainThread(const char *arg) : Thread("main-thread", (void *) arg)
 	{
 	}
 
 protected:
-	void startPwm(lwiot::esp32::PwmTimer& timer)
+	void startPwm(lwiot::esp32::PwmTimer &timer)
 	{
-		auto& channel = timer[0];
+		auto &channel = timer[0];
 		auto pin = lwiot::GpioPin(27);
 
 		channel.setGpioPin(pin);
@@ -121,9 +124,9 @@ protected:
 		channel.reload();
 	}
 
-	void startAP(const lwiot::String& ssid, const lwiot::String& passw)
+	void startAP(const lwiot::String &ssid, const lwiot::String &passw)
 	{
-		auto& ap = lwiot::esp32::WifiAccessPoint::instance();
+		auto &ap = lwiot::esp32::WifiAccessPoint::instance();
 		lwiot::IPAddress local(192, 168, 1, 1);
 		lwiot::IPAddress subnet(255, 255, 255, 0);
 		lwiot::IPAddress gw(192, 168, 1, 1);
@@ -135,30 +138,35 @@ protected:
 
 	void startStation()
 	{
-		auto& sta = lwiot::esp32::WifiStation::instance();
+		auto &sta = lwiot::esp32::WifiStation::instance();
 		sta.connectTo("Intranet", "Plofkipbanaan01");
+		//sta.connectTo("bietje", "banaan01");
 		while(sta.status() != lwiot::WL_CONNECTED) {
 			wdt.reset();
 			lwiot_sleep(100);
 		}
 	}
 
-	void subscribe(lwiot::AsyncMqttClient& mqtt)
+	void subscribe(lwiot::AsyncMqttClient &mqtt)
 	{
 		print_dbg("Subscribing...\n");
-		mqtt.subscribe("test/subscribe/1", [&](const lwiot::ByteBuffer& payload) {
+		auto result = mqtt.subscribe("test/subscribe/1", [&](const lwiot::ByteBuffer &payload) {
 			lwiot::stl::String str(payload);
 
 			a++;
 			print_dbg("Data (subscribe/1): %s\n", str.c_str());
 		}, lwiot::MqttClient::QOS0);
 
-		mqtt.subscribe("test/subscribe/2", [&](const lwiot::ByteBuffer& payload) {
+		result = result && mqtt.subscribe("test/subscribe/2", [&](const lwiot::ByteBuffer &payload) {
 			lwiot::stl::String str(payload);
 
 			b++;
 			print_dbg("Data (subscribe/2): %s\n", str.c_str());
 		}, lwiot::MqttClient::QOS0);
+
+		if(!result) {
+			print_dbg("Unable to subscribe!\n");
+		}
 	}
 
 	virtual void run() override
@@ -167,10 +175,12 @@ protected:
 		lwiot::DateTime dt(1539189832);
 		lwiot::I2CBus bus(new lwiot::esp32::HardwareI2CAlgorithm(22, 23, 400000));
 		lwiot::IPAddress local(192, 168, 1, 1);
-		lwiot::AsyncMqttClient mqtt;
-		lwiot::SocketUdpClient udp_client;
+		lwiot::AsyncMqttClient mqtt(3000);
 		lwiot::NtpClient ntp;
+		lwiot::atomic_uint32_t count(0);
 		lwiot::Guid guid;
+		auto& WDT = lwiot::esp32::Watchdog::instance();
+		lwiot::DnsClient dnsclient;
 
 		lwiot_sleep(1000);
 		wdt.disable();
@@ -181,6 +191,8 @@ protected:
 		print_dbg("Time: %s\n", dt.toString().c_str());
 		lwiot::Function<void()> recon_handler = [&]() {
 			this->subscribe(mqtt);
+			print_dbg("Reconnect handler!\n");
+			count++;
 		};
 
 		mqtt.setReconnectHandler(recon_handler);
@@ -190,7 +202,7 @@ protected:
 
 		a = b = 0;
 
-		lwiot::SocketTcpClient client("mail.sonatolabs.com", 1883);
+		lwiot::SocketTcpClient client(dnsclient.lookup("mail.sonatolabs.com"), 1883);
 		client.setTimeout(2000);
 		mqtt.start(client);
 
@@ -207,7 +219,7 @@ protected:
 
 		this->subscribe(mqtt);
 
-		lwiot::SocketUdpServer* udp = new lwiot::SocketUdpServer(BIND_ADDR_ANY, 53);
+		lwiot::SocketUdpServer *udp = new lwiot::SocketUdpServer(BIND_ADDR_ANY, 53);
 		lwiot::DnsServer dns;
 
 		dns.map("smartsensor.local", local);
@@ -221,41 +233,65 @@ protected:
 		auto http = new HttpServerThread(nullptr);
 		http->start();
 
-		wdt.enable(6000);
+		wdt.enable(7000);
 
 		while(true) {
-			if(lwiot::esp32::WifiStation::instance().status() == lwiot::WL_CONNECTED) {
-				udp_client.begin("nl.pool.ntp.org", 123);
+			WDT.reset();
+
+			if(lwiot::esp32::WifiStation::instance().status() != lwiot::WL_CONNECTED) {
+				this->startStation();
+				WDT.reset();
+				continue;
+			}
+
+			print_dbg("Fetching time..\n");
+			WDT.disableLocal();
+			auto addr = lwiot::stl::move(dnsclient.lookup("nl.pool.ntp.org"));
+			WDT.reset();
+
+			auto update_ok = false;
+			lwiot::SocketUdpClient udp_client;
+
+			if(addr != lwiot::IPAddress(0,0,0,0)) {
+				print_dbg("NTP started..\n");
+				udp_client.begin(addr, 123);
+
+				WDT.reset();
 				udp_client.setTimeout(700);
 				ntp.begin(udp_client);
+				update_ok = ntp.update();
 			} else {
-				this->startStation();
-				wdt.reset();
-				continue;
+				print_dbg("NTP DNS lookup failed!\n");
+			}
+
+			WDT.reset();
+
+			lwiot::DateTime now(ntp.time());
+
+			if(!update_ok) {
+				print_dbg("Unable to update time!\n");
+			} else {
+				print_dbg("TIme fetched!\n");
 			}
 
 			wdt.reset();
 
 			sensor.getLux(luxdata);
-
-			auto update_ok = ntp.update();
-			lwiot::DateTime now(ntp.time());
-
-			if(!update_ok) {
-				print_dbg("Unable to update time!\n");
-				wdt.reset();
-			}
-
 			print_dbg("[%s]: Lux value: %f\n", now.toString().c_str(), luxdata);
 
-			auto freesize = heap_caps_get_free_size(MALLOC_CAP_DEFAULT) / 1024;
+			auto freesize = heap_caps_get_free_size(MALLOC_CAP_8BIT) / 1024;
 			print_dbg("[%lu] PING: free memory: %uKiB\n", lwiot_tick_ms(), freesize);
+			print_dbg("Reconnects: %u\n", count.load());
+			wdt.reset();
 
-			if(lwiot::esp32::WifiStation::instance().status() == lwiot::WL_CONNECTED) {
-				mqtt.publish("test/subscribe/1", "Test message for s1", false);
-				mqtt.publish("test/subscribe/2", "Test message for s2", false);
-			}
+			lwiot::stl::String msg("Free memory: ");
+			msg += freesize;
+			msg += "KiB - Reconnects: ";
+			msg += count.load();
 
+			mqtt.publish("test/subscribe/1", msg, false);
+			wdt.reset();
+			mqtt.publish("test/subscribe/2", "Test message for s2", false);
 			wdt.reset();
 
 			lwiot_sleep(1000);
