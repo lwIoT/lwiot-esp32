@@ -13,49 +13,63 @@
 #include <lwiot/io/watchdog.h>
 #include <lwiot/esp32/esp32watchdog.h>
 
-namespace lwiot { namespace esp32
+namespace lwiot
 {
-	Watchdog::Watchdog() : lwiot::Watchdog()
-	{ }
-
-	bool Watchdog::enable(uint32_t tmo)
+	namespace esp32
 	{
-		bool ret = esp_task_wdt_init(tmo / 1000, true) == ESP_OK;
-
-		if(ret) {
-			lwiot::Watchdog::enable(tmo);
-#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0
-			esp_task_wdt_delete(xTaskGetIdleTaskHandleForCPU(0));
-#endif
-#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
-			esp_task_wdt_delete(xTaskGetIdleTaskHandleForCPU(1));
-#endif
+		Watchdog::Watchdog() : lwiot::Watchdog()
+		{
 		}
 
-		return ret;
-	}
+		bool Watchdog::enable(uint32_t tmo)
+		{
+			bool ret = esp_task_wdt_init(tmo / 1000, true) == ESP_OK;
 
-	bool Watchdog::disable()
-	{
-		lwiot::Watchdog::disable();
-		return esp_task_wdt_deinit() == ESP_OK;
-	}
+			if(ret) {
+				lwiot::Watchdog::enable(tmo);
+#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU0
+				esp_task_wdt_delete(xTaskGetIdleTaskHandleForCPU(0));
+#endif
+#ifdef CONFIG_TASK_WDT_CHECK_IDLE_TASK_CPU1
+				esp_task_wdt_delete(xTaskGetIdleTaskHandleForCPU(1));
+#endif
+			}
 
-	void Watchdog::reset()
-	{
-		TaskHandle_t handle;
+			return ret;
+		}
 
-		if(!this->enabled())
-			return;
+		bool Watchdog::disable()
+		{
+			lwiot::Watchdog::disable();
+			return esp_task_wdt_deinit() == ESP_OK;
+		}
 
-		if(esp_task_wdt_reset() == ESP_OK)
-			return;
+		void Watchdog::reset()
+		{
+			TaskHandle_t handle;
 
-		handle = xTaskGetCurrentTaskHandle();
-		esp_task_wdt_add(handle);
-		esp_task_wdt_reset();
+			if(!this->enabled())
+				return;
+
+			if(esp_task_wdt_reset() == ESP_OK)
+				return;
+
+			handle = xTaskGetCurrentTaskHandle();
+			esp_task_wdt_add(handle);
+			esp_task_wdt_reset();
+		}
+
+		void Watchdog::disableLocal()
+		{
+			TaskHandle_t handle;
+
+			if(!this->enabled())
+				return;
+
+			handle = xTaskGetCurrentTaskHandle();
+			ESP_ERROR_CHECK( esp_task_wdt_delete(handle))
+		}
 	}
 }
-}
 
-lwiot::Watchdog& wdt = lwiot::esp32::Watchdog::instance();
+lwiot::Watchdog &wdt = lwiot::esp32::Watchdog::instance();

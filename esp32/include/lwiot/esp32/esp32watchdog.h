@@ -30,6 +30,7 @@ namespace lwiot { namespace esp32
 
 		virtual bool enable(uint32_t tmo = 2000) override;
 		virtual bool disable() override;
+		void disableLocal();
 		virtual void reset() override;
 
 	private:
