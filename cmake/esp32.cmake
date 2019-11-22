@@ -103,11 +103,11 @@ SET(PORT_INCLUDE_DIR
 	${ESP32_IDF_PATH}/components/soc/esp32/include
 	${ESP32_IDF_PATH}/components/soc/include
 	${ESP32_IDF_PATH}/components/freertos/include/freertos
-	${ESP32_IDF_PATH}/components/newlib/platform_include
 	${ESP32_IDF_PATH}/components/spiffs/include
 
-
 	${APP_CONFIG}
+	${ESP32_IDF_PATH}/components/newlib/platform_include
+	${ESP32_IDF_PATH}/components/newlib/include
 )
 
 set(LWIOT_CORE_INCLUDE_DIRECTORIES
